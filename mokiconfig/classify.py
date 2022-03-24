@@ -3,6 +3,7 @@ import os
 import xlrd
 import xlwt
 import shutil
+import re
 
 def readConfig():	# 读取配置文件
 	global config, modeConfig, functionConfig, status, mode, signal, root	# 定义为全局变量
@@ -55,12 +56,40 @@ def mvDir():	# 只移动目录及其目录下的文件
 		if(os.path.isdir(file)):	# 是目录
 			filename = os.path.splitext(file)[0]	# 文件名
 			suffix = filename.split(signal)[-1]
-			dirname = mvDic.get(suffix, 0)
+			dirname = mvDic.get(suffix, 0)#mvDic[suffix]
 			if dirname != 0:
 				if not os.path.exists(dirname):	# 判断是否有文件夹，没有则创建
 					os.mkdir(dirname)
 				shutil.move(file, dirname)	#递归地将一个文件或目录 (src) 移至另一位置 (dst) 并返回目标位置
 
+# 去除已分类的后缀名称（不对未分类的处理），文件夹（不含其内的子文件）和文件
+def throwSuffix():
+	for item in mvDic.items():	# 遍历字典中的元组(键，值)
+		if os.path.exists(item[1]):
+			for file in os.listdir(item[1]):
+				filename = os.path.splitext(file)[0]	# 文件名 a@img
+				suffix = filename.split(signal)[-1]	# img
+				dirname = mvDic.get(suffix, 0)	# img -> 图片
+				print(filename)
+				if dirname != 0:
+					os.chdir(item[1])	# 改变工作目录
+					if(os.path.isfile(file)):	# 是文件
+						filesuffix = os.path.splitext(file)[1]	# .jpeg
+						midname = signal.join(filename.split('@')[0:-1])
+						newname = midname + filesuffix
+						shutil.move(file, newname)	# 重命名
+					elif(os.path.isdir(file)):	# 是目录
+						newname = signal.join(filename.split('@')[0:-1])
+						shutil.move(file, newname)	# 重命名
+					os.chdir("../")	# 改变工作目录
+
+# 恢复后缀名
+def resumeSuffix():
+	pass
+
 if __name__ == '__main__':
 	readConfig()
-	mv()
+	if mode == 1:
+		mv()
+	elif mode == 3:
+		throwSuffix()
